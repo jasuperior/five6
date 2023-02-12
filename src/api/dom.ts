@@ -1,5 +1,5 @@
 import { ElementType, Element, NodeType } from "../models/Element.model";
-import { Thread } from "../models/Render.model";
+import { Thread } from "../models/Dom.model";
 import {
     createDeletions,
     getCurrentRoot,

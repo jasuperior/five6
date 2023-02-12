@@ -1,5 +1,5 @@
 import * as ElementModel from "../models/Element.model";
-import { Effect, Thread } from "../models/Render.model";
+import { Effect, Thread } from "../models/Dom.model";
 import {
     getDeletions,
     getWipRoot,
@@ -103,10 +103,8 @@ const isNew =
     (prev: ElementModel.ElementProps, next: ElementModel.ElementProps) =>
     (key: string) =>
         prev[key] !== next[key];
-const isGone =
-    (prev: ElementModel.ElementProps, next: ElementModel.ElementProps) =>
-    (key: string) =>
-        !(key in next);
+const isGone = (next: ElementModel.ElementProps) => (key: string) =>
+    !(key in next);
 
 const updateDom = (
     dom: Element | Text,
@@ -126,7 +124,7 @@ const updateDom = (
 
     Object.keys(prevProps)
         .filter(isProperty)
-        .filter(isGone(prevProps, nextProps))
+        .filter(isGone(nextProps))
         .forEach((name) => {
             //@ts-ignore
             dom[name] = "";

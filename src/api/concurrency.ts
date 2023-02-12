@@ -1,7 +1,7 @@
 import { NodeType } from "../models/Element.model";
-import { Thread } from "../models/Render.model";
+import { Thread } from "../models/Dom.model";
 import { reconcileChildren } from "./reconcile";
-import { createDom } from "./render";
+import { createDom } from "./dom";
 
 let nextUnitOfWork: Thread | null = null;
 let wipRoot: Thread | null = null;
