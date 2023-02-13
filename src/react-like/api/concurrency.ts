@@ -38,7 +38,7 @@ export const workLoop = (deadline: IdleDeadline) => {
         nextUnitOfWork = performUnitOfWork(nextUnitOfWork);
         shouldYield = deadline.timeRemaining() < 1;
     }
-    requestIdleCallback(workLoop);
+    requestIdleCallback(workLoop, { timeout: 1 });
 };
 
 export const performUnitOfWork = (thread: Thread): Thread | null => {
@@ -63,16 +63,16 @@ export const performUnitOfWork = (thread: Thread): Thread | null => {
 
 const updateFunctionComponent = (thread: Thread) => {
     const children = [thread.render?.(thread.props)];
-    reconcileChildren(thread, children);
+    reconcileChildren(thread, children.flat());
 };
 const updateHostComponent = (thread: Thread) => {
     if (!thread.dom) {
         thread.dom = createDom(thread);
     }
-    reconcileChildren(thread, thread.props.children);
+    reconcileChildren(thread, thread.props.children.flat());
 };
 
-requestIdleCallback(workLoop);
+requestIdleCallback(workLoop, { timeout: 1 });
 
 // if (thread.parent) {
 //     thread.parent?.dom?.appendChild(thread.dom);

@@ -30,8 +30,10 @@ export const commitWork = (thread?: Thread) => {
         domParent?.appendChild(thread.dom);
     else if (thread.dom && thread.effect == Effect.UPDATE)
         updateDom(thread.dom, thread.alternate?.props, thread.props);
-    else if (thread.dom && thread.effect == Effect.DELETE)
+    else if (thread.dom && thread.effect == Effect.DELETE) {
         commitDeletion(thread, domParent as Element);
+        return;
+    }
     commitWork(thread.child);
     commitWork(thread.sibling);
 };
@@ -115,7 +117,7 @@ const updateDom = (
     Object.keys(prevProps)
         .filter(isEvent)
         .filter(
-            (key) => !(key in nextProps) || isNew(prevProps, nextProps)(key)
+            (key) => isGone(nextProps)(key) || isNew(prevProps, nextProps)(key)
         )
         .forEach((name) => {
             const eventType = name.toLowerCase().substring(2);
