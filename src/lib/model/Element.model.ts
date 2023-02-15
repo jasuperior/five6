@@ -175,6 +175,9 @@ export type ElementType = `${ElementTypeUnion}`;
 export type ElementProps = {
     // value?: string | number | boolean;
     [key: string]: any;
-} & { children: (Element | Element[] | Text | string)[] };
+} & {
+    children: (Element | Element[] | Text | string)[];
+    provide: (context: any) => any;
+};
 
 export type Component = (props: ElementProps) => Element;

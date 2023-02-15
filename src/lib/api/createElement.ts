@@ -15,12 +15,18 @@ export const createElement = (
     ...children: (Element | string | Element[] | Text)[]
 ): Element => {
     let el: Element;
+    const attr: any = {};
+    let provide = (context: any) => {
+        Object.assign(attr, context);
+        // console.log(output)
+        return attr;
+    };
     if (typeof type == "string") {
         el = createHTMLNode(type as HTMLElementType, props);
     } else if (isState(type)) {
         el = type(props);
     } else {
-        return type({ ...props, children });
+        return wrapElement(type({ ...props, children, provide }), attr);
     }
     //TODO how do I handle conditional rendering of elements?
     let mapChild = (child: any): Element | Element[] | Text => {
@@ -62,12 +68,13 @@ export const createElement = (
     };
     let body = children.map(mapChild).flat();
     el.append(...body);
-    return el;
+    return wrapElement(el, attr);
 };
 
-export const createHTMLNode = (type: HTMLElementType, props: any) => {
+export const createHTMLNode = (type: HTMLElementType, props?: any) => {
     let el = document.createElement(type);
-    let keys = Object.keys(props);
+    let keys = props ? Object.keys(props) : [];
+    console.log(props);
     keys.forEach((key) => {
         let value = props[key];
         if (key == "style") {
@@ -80,6 +87,9 @@ export const createHTMLNode = (type: HTMLElementType, props: any) => {
             value((next) => (el[key] = next));
             //@ts-ignore
             el[key] = value.value;
+        } else {
+            //@ts-ignore
+            el[key] = value;
         }
     });
     return el;
@@ -90,6 +100,19 @@ export const createTextNode = (text: string) => {
     return el;
 };
 
+export const wrapElement = (el: Element, output: any) => {
+    return new Proxy(el, {
+        get(target, prop) {
+            let context = Reflect.has(output, prop) ? output : el;
+            let value = Reflect.get(context, prop);
+            if (prop == "colorState") console.log(prop, output);
+            if (value instanceof Function) {
+                return value.bind(context);
+            }
+            return value;
+        },
+    });
+};
 const resolveChildren = (
     element: Element,
     children: Element[],
@@ -124,12 +147,14 @@ const resolveChildren = (
 //TODO need to create a way to do component cleanup when element is unmounted
 
 let globalcolor = state("black");
-let component = ({ children, color }: ElementProps) => {
+let ExampleComponent = ({ children, color, provide }: ElementProps) => {
     const colorState = state(color || globalcolor.value);
     globalcolor((next) => {
         if (next == "pink") colorState(next);
         else colorState(color || next);
     });
+
+    provide({ colorState });
     return createElement(
         "div",
         { style: { color: colorState } },
@@ -138,12 +163,23 @@ let component = ({ children, color }: ElementProps) => {
     );
 };
 
-let el = createElement(
-    component,
-    {},
-    "goodbye",
-    createElement(component, { color: "blue" }, "goodbye")
-);
-el.outerHTML; //?
-globalcolor("black");
-el.outerHTML; //?
+// let el = createElement(
+//     ExampleComponent,
+//     {},
+//     "goodbye",
+//     createElement(ExampleComponent, { color: "blue" }, "goodbye")
+// );
+
+// let examples = { a: 1, b: 2 };
+// let el2 = createElement(ExampleComponent, {}, "new element");
+// // let el3 = new Proxy(el2, {});
+// globalcolor("blue");
+// //TODO work on types for outputs
+// TODO create type for output element
+// el2.colorState("wheat"); //?
+// el.append(el2);
+
+// el.outerHTML; //?
+//TODO need to handle aria-labels, data-attributes, and look into why things like width dont work.
+//TODO handle assigning arrays for class and id properties to be space seperated string
+//TODO handle className / class property assigning
