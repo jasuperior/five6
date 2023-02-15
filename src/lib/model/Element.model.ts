@@ -172,10 +172,9 @@ export enum HTMLElementType {
 }
 export type ElementTypeUnion = HTMLElementType | SVGElementType | NodeType;
 export type ElementType = `${ElementTypeUnion}`;
-export interface ElementProps {
+export type ElementProps = {
     // value?: string | number | boolean;
-    children: (Element | Text)[];
     [key: string]: any;
-}
+} & { children: (Element | Element[] | Text | string)[] };
 
 export type Component = (props: ElementProps) => Element;

@@ -2,21 +2,25 @@ import {
     ElementType,
     HTMLElementType,
     Component,
+    ElementProps,
 } from "../model/Element.model";
 import { applyStyles } from "./applyStyles";
 import { convertEvent, isEvent, isPrimitive, isState } from "./utils";
 import { state, map, Action } from "@oneii3/4iv";
+import { Effect } from "../../react-like/models/Dom.model";
 
 export const createElement = (
     type: ElementType | Component,
     props: any,
-    ...children: (Element | string | Function)[]
+    ...children: (Element | string | Element[] | Text)[]
 ): Element => {
     let el: Element;
     if (typeof type == "string") {
         el = createHTMLNode(type as HTMLElementType, props);
-    } else {
+    } else if (isState(type)) {
         el = type(props);
+    } else {
+        return type({ ...props, children });
     }
     //TODO how do I handle conditional rendering of elements?
     let mapChild = (child: any): Element | Element[] | Text => {
@@ -117,3 +121,29 @@ const resolveChildren = (
             break;
     }
 };
+//TODO need to create a way to do component cleanup when element is unmounted
+
+let globalcolor = state("black");
+let component = ({ children, color }: ElementProps) => {
+    const colorState = state(color || globalcolor.value);
+    globalcolor((next) => {
+        if (next == "pink") colorState(next);
+        else colorState(color || next);
+    });
+    return createElement(
+        "div",
+        { style: { color: colorState } },
+        ...children,
+        " cash"
+    );
+};
+
+let el = createElement(
+    component,
+    {},
+    "goodbye",
+    createElement(component, { color: "blue" }, "goodbye")
+);
+el.outerHTML; //?
+globalcolor("black");
+el.outerHTML; //?

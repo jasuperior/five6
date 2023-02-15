@@ -1,3 +1,9 @@
+import { state } from "@oneii3/4iv";
+
+export const or = (...choices: any[]) => {
+    let result = state();
+};
+
 export const controlFlow = {};
 
 /*
@@ -10,4 +16,6 @@ For lists:
 - use the array to detect the elements which may need to be replaced/added and where.
 
 
+choice(()=> a > 21, someState, someElseState)
+or(something, and(somethingelse, somethingthird), somethingother)
 */
