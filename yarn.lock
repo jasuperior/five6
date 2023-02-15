@@ -173,10 +173,10 @@
     "@jridgewell/resolve-uri" "3.1.0"
     "@jridgewell/sourcemap-codec" "1.4.14"
 
-"@oneii3/4iv@^0.0.9":
-  version "0.0.9"
-  resolved "https://registry.yarnpkg.com/@oneii3/4iv/-/4iv-0.0.9.tgz#85c2a7af5e68ca6c5a11bb54ceec32d28cf2bfa7"
-  integrity sha512-UzdTVoLcvGwh5/c+6+kJJZzHQR05wzdHMp7ysoWVLioX2Zr++CZ/277Psl31ZKwROqvcrDClf/YdKvUFpKfFHg==
+"@oneii3/4iv@^0.0.12":
+  version "0.0.12"
+  resolved "https://registry.yarnpkg.com/@oneii3/4iv/-/4iv-0.0.12.tgz#74449fc0287f70a60cb9365d77f9e73e655310f8"
+  integrity sha512-R1cFKJB/V1JE/pg/+/1VJValYWm4zaQe6cvp77I3Mi4JY9CcreG0rL1Lx+0X5uXr0XHDlPklj96INmJ6vaQZdw==
   dependencies:
     html-template-string "^1.2.6"
     rollup-plugin-terser "^7.0.2"

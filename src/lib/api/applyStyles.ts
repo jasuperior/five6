@@ -11,11 +11,11 @@ export const applyStyles = (el: HTMLElement, styles: any) => {
                     el.style[key] = getStyleValue(key as string, next);
                 });
                 //@ts-ignore
-                el.style[key] = value.value;
+                el.style[key] = getStyleValue(key as string, value.value);
             }
             default: {
                 //@ts-ignore
-                el.style[key] = value;
+                el.style[key] = getStyleValue(key, value);
             }
         }
     });
@@ -33,6 +33,5 @@ const getStyleValue = (key: string, value: any) => {
         default: {
         }
     }
-
     return value;
 };
