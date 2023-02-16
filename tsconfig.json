@@ -5,7 +5,7 @@
         "module": "ESNext",
         "lib": ["ESNext", "DOM"],
         "moduleResolution": "Node",
-        "strict": true,
+        "strict": false,
         "resolveJsonModule": true,
         "isolatedModules": true,
         "esModuleInterop": true,
@@ -14,8 +14,10 @@
         "noUnusedParameters": true,
         "noImplicitReturns": true,
         "skipLibCheck": true,
-        "jsx": "preserve",
-        "jsxFactory": "Five6.createElement"
+        "jsx": "react",
+        "jsxFactory": "Five6.createElement",
+        "jsxFragmentFactory": "Five6.createFragment",
+        "typeRoots": ["./src/lib/model"]
     },
     "include": ["src"]
 }

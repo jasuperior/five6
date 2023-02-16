@@ -2,26 +2,39 @@ import {
     ElementType,
     HTMLElementType,
     Component,
-    ElementProps,
 } from "../model/Element.model";
 import { applyStyles } from "./applyStyles";
-import { convertEvent, isEvent, isPrimitive, isState } from "./utils";
-import { state, map, Action } from "@oneii3/4iv";
-import { Effect } from "../../react-like/models/Dom.model";
-
+import {
+    convertEvent,
+    getDataAttr,
+    isClassList,
+    isDataAttr,
+    isEvent,
+    isPrimitive,
+    isState,
+} from "./utils";
+const customElements: any = {};
+export const createCustomElement = (key: string, definition: Function) => {
+    customElements[key] = definition;
+};
 export const createElement = (
     type: ElementType | Component,
     props: any,
     ...children: (Element | string | Element[] | Text)[]
-): Element => {
+): Element | Record<string, any> => {
     let el: Element;
     const attr: any = {};
     let provide = (context: any) => {
         Object.assign(attr, context);
-        // console.log(output)
         return attr;
     };
     if (typeof type == "string") {
+        if (customElements[type]) {
+            return wrapElement(
+                customElements[type]({ ...props, children, provide }),
+                attr
+            );
+        }
         el = createHTMLNode(type as HTMLElementType, props);
     } else if (isState(type)) {
         el = type(props);
@@ -29,20 +42,13 @@ export const createElement = (
         return wrapElement(type({ ...props, children, provide }), attr);
     }
     //TODO how do I handle conditional rendering of elements?
-    let mapChild = (child: any): Element | Element[] | Text => {
+    let mapChild = (child: any, i?: number): Element | Element[] | Text => {
         switch (true) {
+            //TODO handle undefined case
             case isPrimitive(child):
                 return createTextNode(child);
-            // case Array.isArray(child):{
-
-            // }
             case child instanceof Array && !isState(child):
-                return child
-                    .map((value: any) => {
-                        let newChild = mapChild(value);
-                        return newChild;
-                    })
-                    .flat();
+                return child.map(mapChild).flat();
             case isState(child): {
                 let { value } = child;
                 child((next: any) => {
@@ -61,37 +67,89 @@ export const createElement = (
                 return mappedChild;
             }
             case child instanceof Function:
-                throw Error("Cant handle functional children yet");
+                // console.log(children);
+                return wrapElement(
+                    child({
+                        ...props,
+                        ...attr,
+                        provide,
+                        siblings: {
+                            before: children.slice(0, i),
+                            after: children.slice(i + 1),
+                        },
+                        children: [],
+                    }),
+                    attr
+                );
             default:
                 return child;
         }
     };
     let body = children.map(mapChild).flat();
     el.append(...body);
+
     return wrapElement(el, attr);
 };
 
+export const createFragment = ({ children }) => {
+    return children.flat();
+};
 export const createHTMLNode = (type: HTMLElementType, props?: any) => {
     let el = document.createElement(type);
     let keys = props ? Object.keys(props) : [];
-    console.log(props);
-    keys.forEach((key) => {
-        let value = props[key];
-        if (key == "style") {
-            applyStyles(el, value);
-        } else if (isEvent(key)) {
-            let event = convertEvent(key);
-            el.addEventListener(event, value);
-        } else if (isState(value)) {
-            //@ts-ignore
-            value((next) => (el[key] = next));
-            //@ts-ignore
-            el[key] = value.value;
-        } else {
-            //@ts-ignore
-            el[key] = value;
-        }
-    });
+    let mapProps;
+    keys.forEach(
+        (mapProps = (key: string) => {
+            let value = props[key];
+            switch (true) {
+                case key == "style": {
+                    applyStyles(el, value);
+                    break;
+                }
+                case isEvent(key): {
+                    let event = convertEvent(key);
+                    el.addEventListener(event, value);
+                    break;
+                }
+                case isDataAttr(key): {
+                    key = getDataAttr(key);
+                    if (isState(value)) {
+                        el.dataset[key] = value.value;
+                        value((next: any) => (el.dataset[key] = next));
+                    } else {
+                        el.dataset[key] = value;
+                    }
+                    break;
+                }
+                case isState(value): {
+                    //@ts-ignore
+                    value((next) => (el[key] = next));
+                    //@ts-ignore
+                    el[key] = value.value;
+                    break;
+                }
+                case isClassList(key): {
+                    let classNames = Object.keys(value);
+                    classNames.forEach((className: string) => {
+                        let showValue = value[className];
+                        if (isState(showValue)) {
+                            el.classList.toggle(className, !!showValue.value);
+                            showValue((next: any) =>
+                                el.classList.toggle(className, !!next)
+                            );
+                        } else {
+                            el.classList.toggle(className, !!showValue);
+                        }
+                    });
+                    break;
+                }
+                default: {
+                    //@ts-ignore
+                    el[key] = value;
+                }
+            }
+        })
+    );
     return el;
 };
 
@@ -102,7 +160,7 @@ export const createTextNode = (text: string) => {
 
 export const wrapElement = (el: Element, output: any) => {
     return new Proxy(el, {
-        get(target, prop) {
+        get(_, prop) {
             let context = Reflect.has(output, prop) ? output : el;
             let value = Reflect.get(context, prop);
             if (prop == "colorState") console.log(prop, output);
@@ -144,42 +202,9 @@ const resolveChildren = (
             break;
     }
 };
-//TODO need to create a way to do component cleanup when element is unmounted
-
-let globalcolor = state("black");
-let ExampleComponent = ({ children, color, provide }: ElementProps) => {
-    const colorState = state(color || globalcolor.value);
-    globalcolor((next) => {
-        if (next == "pink") colorState(next);
-        else colorState(color || next);
-    });
-
-    provide({ colorState });
-    return createElement(
-        "div",
-        { style: { color: colorState } },
-        ...children,
-        " cash"
-    );
-};
-
-// let el = createElement(
-//     ExampleComponent,
-//     {},
-//     "goodbye",
-//     createElement(ExampleComponent, { color: "blue" }, "goodbye")
-// );
-
-// let examples = { a: 1, b: 2 };
-// let el2 = createElement(ExampleComponent, {}, "new element");
-// // let el3 = new Proxy(el2, {});
-// globalcolor("blue");
-// //TODO work on types for outputs
+// TODO need to create a way to do component cleanup when element is unmounted
+// TODO work on types for outputs
 // TODO create type for output element
-// el2.colorState("wheat"); //?
-// el.append(el2);
-
-// el.outerHTML; //?
 //TODO need to handle aria-labels, data-attributes, and look into why things like width dont work.
 //TODO handle assigning arrays for class and id properties to be space seperated string
 //TODO handle className / class property assigning
